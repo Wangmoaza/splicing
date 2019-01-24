@@ -1,0 +1,13 @@
+#!/bin/bash
+
+APT_DIR="/home/omics/DATA0/Hyoeun/spliceQTL/Tools/apt-1.20.6-x86_64-intel-linux/bin" #Affymetrix Power Tool
+AFFY_DB="/home/omics/DATA0/Hyoeun/spliceQTL/Tools/GenomeWideSNP_6.na35.annot.db"
+AFFY_LIB_DIR="/home/omics/DATA0/Hyoeun/spliceQTL/Tools/CD_GenomeWideSNP_6_rev3/Full/GenomeWideSNP_6/LibFiles"
+
+PLINK_DIR="/home/omics/DATA0/Hyoeun/spliceQTL/Tools/plink-1.07-x86_64"
+
+TISSUE="OVARY"
+INPUT_DIR="/home/omics/DATA1/haeun/splicing/data/CCLE/variant/birdseed/$TISSUE"
+TMP_DIR="tmp_$TISSUE"
+OUTPUT_DIR="result_$TISSUE"
+LIST="/home/omics/DATA1/haeun/splicing/data/CCLE/variant/birdseed/$TISSUE/filename.txt"

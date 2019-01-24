@@ -1,0 +1,43 @@
+PLINK v1.90b4.9 64-bit (13 Oct 2017)
+Options in effect:
+  --cluster
+  --file CCLE-OVARY_sampQC
+  --mds-plot 3
+  --noweb
+  --out CCLE-OVARY_pca
+  --read-genome CCLE-OVARY_IBS.genome
+
+Hostname: omicsNode2
+Working directory: /home/omics/DATA1/haeun/splicing/src/SNP-impute/02_PLINK_QC
+Start time: Tue Jan  1 16:30:10 2019
+
+Note: --noweb has no effect since no web check is implemented yet.
+Random number seed: 1546327810
+257851 MB RAM detected; reserving 128925 MB for main workspace.
+Scanning .ped file... done.
+Performing single-pass .bed write (906600 variants, 40 people).
+--file: CCLE-OVARY_pca-temporary.bed + CCLE-OVARY_pca-temporary.bim +
+CCLE-OVARY_pca-temporary.fam written.
+906600 variants loaded from .bim file.
+40 people (0 males, 34 females, 6 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to CCLE-OVARY_pca.nosex .
+40 phenotype values loaded from .fam.
+Warning: Ignoring phenotypes of missing-sex samples.  If you don't want those
+phenotypes to be ignored, use the --allow-no-sex flag.
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 40 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Warning: Nonmissing nonmale Y chromosome genotype(s) present; many commands
+treat these as missing.
+Total genotyping rate is 0.936231.
+906600 variants and 40 people pass filters and QC.
+Among remaining phenotypes, 0 are cases and 34 are controls.  (6 phenotypes are
+missing.)
+Clustering... done.
+Cluster solution written to CCLE-OVARY_pca.cluster1 , CCLE-OVARY_pca.cluster2 ,
+and CCLE-OVARY_pca.cluster3 .
+Performing multidimensional scaling analysis (SVD algorithm, 3
+dimensions)... done.
+MDS solution written to CCLE-OVARY_pca.mds .
+
+End time: Tue Jan  1 16:30:13 2019
