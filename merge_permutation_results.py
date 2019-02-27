@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from statsmodels.stats.multitest import fdrcorrection
 
-PREFIX = "All"
+PREFIX = "BRCA_free"
 PATH = "/home/haeun/2TB_disk/splicing/Analysis/HR_leafviz/{0}/results/".format(PREFIX)
 
 
@@ -38,12 +38,12 @@ def get_permute_q():
 
 def main():
     q = get_permute_q()
-    ori_df = pd.read_csv(PATH + 'All_cluster_significance.txt', sep='\t', header=0, index_col=0)
+    ori_df = pd.read_csv(PATH + '{0}_cluster_significance.txt'.format(PREFIX), sep='\t', header=0, index_col=0)
     new_df = pd.concat([ori_df[['p', 'p.adjust', 'genes']], q], axis=1, join='inner')
     new_df = new_df[['p', 'p.adjust', 'original', 'genes']]
     new_df.columns = ['p', 'p.cluster_adjust', 'p.group_adjust', 'genes']
     new_df.index.name = "cluster"
-    new_df.sort_values('p.group_adjust').to_csv(PATH + 'All_cluster_significance.permute_adjusted.txt', sep='\t')
+    new_df.sort_values('p.group_adjust').to_csv(PATH + '{0}_cluster_significance.permute_adjusted.txt'.format(PREFIX), sep='\t')
 
 
 if __name__ == "__main__":
