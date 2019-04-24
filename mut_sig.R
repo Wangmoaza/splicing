@@ -1,14 +1,15 @@
 library(BSgenome)
 # download and load reference genome
 ref_genome <- "BSgenome.Hsapiens.UCSC.hg38"
-#source("http://bioconductor.org/biocLite.R")
-#biocManager::install(ref_genome)
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install(ref_genome, version = "3.8")
 library(ref_genome, character.only = TRUE)
 library(MutationalPatterns)
 
 
-setwd('/home/haeun/2TB_disk/splicing/data/TCGA/TCGA-BRCA/mutect2_autosomal')
-vcf_files <- list.files(pattern = ".vcf", full.names = TRUE)
+setwd('/home/haeun/DATA/splicing/data/TCGA/TCGA-BRCA/mutect2')
+vcf_files <- list.files(pattern = ".vcf$", full.names = TRUE)
 sample_names <- substring(vcf_files, 3, 14)
 vcfs <- read_vcfs_as_granges(vcf_files, sample_names, ref_genome)
 summary(vcfs)
@@ -24,8 +25,9 @@ colnames(mut_mat) <- sample_names
 #drop <- c('TCGA-AN-A046')
 #mut_mat_wo4 <- mut_mat[ , -which(colnames(mut_mat) %in% drop)]
 
-setwd('/home/haeun/2TB_disk/splicing/Analysis/Signature/MutationalPatterns/')
-write.table(mut_mat, "TCGA-BRCA.autosomal.96subs_matrix.txt", sep="\t", quote=F)
+setwd('/home/haeun/DATA/splicing/Analysis/Signature/MutationalPatterns/')
+write.table(mut_mat, "TCGA-BRCA.96subs_matrix.txt", sep="\t", quote=F)
+write.table(type_occurrences, "TCGA-BRCA.6subs_matrix.txt", sep='\t', quote=F)
 #####################################################
 # De novo mutational signature extraction using NMF #
 ################################################### #
@@ -116,5 +118,5 @@ write.table(apply(fit_res2$contribution, 2, function(x) x / sum(x) ), 'TCGA-BRCA
 write.table(fit_res2$contribution, 'TCGA-BRCA.all_cosimc.abs_contribution.txt', sep="\t", quote=F)
 write.table(cos_sim_ori_rec2, 'TCGA-BRCA.all_cosimc.ori_rec_cos_sim.txt', sep="\t", quote=F)
 write.table(apply(fit_res$contribution, 2, function(x) x / sum(x) ), 'TCGA-BRCA.consensus_cosimc.rel_contribution.txt', sep="\t", quote=F)
-write.table(fit_res$contribution, 'TCGA-BRCA.all_cosimc.consensus_contribution.txt', sep="\t", quote=F)
+write.table(fit_res$contribution, 'TCGA-BRCA.consensus_cosimc.abs_contribution.txt', sep="\t", quote=F)
 write.table(cos_sim_ori_rec, 'TCGA-BRCA.consensus_cosimc.ori_rec_cos_sim.txt', sep="\t", quote=F)

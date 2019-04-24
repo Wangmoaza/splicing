@@ -4,7 +4,7 @@ import numpy as np
 from statsmodels.stats.multitest import fdrcorrection
 
 PREFIX = "BRCA_free"
-PATH = "/home/haeun/2TB_disk/splicing/Analysis/HR_leafviz/{0}/results/".format(PREFIX)
+PATH = "/home/haeun/DATA/splicing/Analysis/HR_leafviz/{0}/results/".format(PREFIX)
 
 
 def return_qval(p_vals):

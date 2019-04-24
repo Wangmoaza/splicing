@@ -1,0 +1,1 @@
+/home/haeun/DATA/splicing/Analysis/Quant/merged/stringtie.BRCA_751.merged.gtf
