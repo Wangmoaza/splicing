@@ -27,13 +27,13 @@ colnames(sample_info) <- c("sample", "HRD", "BRCAness")
 colnames(clinical_info)[1] <- "sample"
 merged_info <- merge(sample_info, clinical_info, by="sample")
 colnames(merged_info) <- c("sample", "HRD", "BRCAness","ER", "PR", "HER2", "stage", "age")
-expr <- read.delim('Analysis/DEG/all_438.HRD_sig3_median_groups.protein_coding.htseq.txt', 
+
+
+expr <- read.delim('data/Cell_lines/CCLE/RNAseq/CCLE-OV.read_counts.tsv', 
                    row.names = 1, header=TRUE, check.names = FALSE)
 expr <- expr %>% drop_na()
 
-
-genes<- read.delim('data/GENCODE/gencode.v22.protein_coding.id_name_mapping.txt', sep='\t', header=F, row.names = 1, check.names = F)
-
+genes<- read.delim('data/GENCODE/gencode.v19.protein_coding.id_name_mapping.txt', sep='\t', header=F, row.names = 1, check.names = F)
 # filter out non-expressed genes (> 10 reads in >=10 samples)
 filter <- apply(expr, 1, function(x) length(x[x>10])>=10)
 filtered <- expr[filter,]
@@ -91,5 +91,5 @@ for (contrast in c("high.eventvsfree", "low.eventvsfree", "event.highvslow", "fr
   write.table(tab, str_interp("Analysis/DEG/${contrast}.HRD_sig3_median_groups.DEG_list.er_her2_covariate.fdr.txt"), sep="\t", quote = F)
 }
 
-write.table(cpm(y, normalized.lib.sizes = T, log = T), "Analysis/DEG/all_438.log_cpm.txt", sep="\t", quote=F)
-write.table(cpm(y, normalized.lib.sizes = T, log = F), "Analysis/DEG/all_438.cpm.txt", sep="\t", quote=F)
+write.table(cpm(y, normalized.lib.sizes = T, log = T), "Analysis/DEG/CCLE-OV.log_cpm.txt", sep="\t", quote=F)
+write.table(cpm(y, normalized.lib.sizes = T, log = F), "Analysis/DEG/CCLE-OV.cpm.txt", sep="\t", quote=F)

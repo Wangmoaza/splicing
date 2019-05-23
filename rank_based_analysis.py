@@ -18,7 +18,8 @@ SAMPLE_INFO = pd.read_csv(PATH + '285sample/shared_sample_with_HRD.txt',
 TIER_GENES = pd.read_csv('~/DATA/splicing/data/KEGG/KEGG_plus_curated_genes_tier_ensembl.txt',
                          sep='\t', header=0, index_col=0)
 
-DF = pd.read_csv(PATH + '285sample/me_shared_sample_tier1-3.txt', sep='\t', index_col=0, header=0)
+DF = pd.read_csv(PATH + '285sample/me_shared_sample_tier1-3.txt',
+                 sep='\t', index_col=0, header=0)
 DF = DF[~DF.index.duplicated(keep='first')]
 
 
@@ -74,23 +75,29 @@ def main():
         result['lowest_genes'] = None
         for sample in result.index:
             new = normalized_df.loc[:, sample]
-            result.at[sample, 'lowest_genes'] = new[new == result.at[sample, 'lowest_rank']].index.values
+            result.at[sample, 'lowest_genes'] = new[new
+                                                    == result.at[sample, 'lowest_rank']].index.values
 
         # draw boxplot
         fig, ax = plt.subplots(figsize=(4, 6))
         sns.boxplot(data=result, x='group', y='lowest_rank', ax=ax)
-        sns.stripplot(data=result, x='group', y='lowest_rank', alpha=0.5, ax=ax)
+        sns.stripplot(data=result, x='group',
+                      y='lowest_rank', alpha=0.5, ax=ax)
         ax.set_title('Tier ' + get_postfix(i))
         plt.tight_layout()
-        fig.savefig('/home/haeun/DATA/splicing/Analysis/rank_based/methyl_tier{0}_{1}_box.png'.format(get_postfix(i), flag))
+        fig.savefig(
+            '/home/haeun/DATA/splicing/Analysis/rank_based/methyl_tier{0}_{1}_box.png'.format(get_postfix(i), flag))
         plt.close()
 
         # draw heatmap
-        hm_df = pd.DataFrame(np.nan, index=gene_subgroup_list[i], columns=SAMPLE_INFO.index)
+        hm_df = pd.DataFrame(
+            np.nan, index=gene_subgroup_list[i], columns=SAMPLE_INFO.index)
         for k in result.index:
-            hm_df.loc[result.loc[k, 'lowest_genes'], k] = result.loc[k, 'lowest_rank']
+            hm_df.loc[result.loc[k, 'lowest_genes'],
+                      k] = result.loc[k, 'lowest_rank']
 
-        draw_clustermap(hm_df).savefig('/home/haeun/DATA/splicing/Analysis/rank_based/methyl_tier{0}_{1}_heatmap.png'.format(get_postfix(i), flag))
+        draw_clustermap(hm_df).savefig(
+            '/home/haeun/DATA/splicing/Analysis/rank_based/methyl_tier{0}_{1}_heatmap.png'.format(get_postfix(i), flag))
 
         # statistical test
         stat, p = mannwhitneyu(result[result['group'] == 'low']['lowest_rank'],
@@ -116,7 +123,9 @@ def sub(x):
         return 0
     return x
 
-df_cnv = pd.read_csv(PATH + '285sample/CNV_shared_sample_tier1-3.txt', sep='\t', index_col=0, header=0)
+
+df_cnv = pd.read_csv(
+    PATH + '285sample/CNV_shared_sample_tier1-3.txt', sep='\t', index_col=0, header=0)
 df_snv = DF.reindex(df_cnv.index).dropna()[df_cnv.columns]
 #aa = (df_cnv - (df_snv == 4).astype(int) <= -2).astype(int)
 aa = (df_snv == 4).astype(int) - df_cnv
@@ -129,6 +138,7 @@ tier_123 = TIER_GENES.index
 gene_subgroup_list = [tier_1, tier_2, tier_3, tier_12, tier_123]
 for i in range(len(gene_subgroup_list)):
     bb = aa.reindex(gene_subgroup_list[i]).dropna(how='all').astype(int)
-    bb.to_csv('/home/haeun/DATA/splicing/Analysis/two-hit/twohit_somatic_nonbinary.tier_{0}.txt'.format(get_postfix(i)), sep='\t')
+    bb.to_csv(
+        '/home/haeun/DATA/splicing/Analysis/two-hit/twohit_somatic_nonbinary.tier_{0}.txt'.format(get_postfix(i)), sep='\t')
     #hm_df = bb.replace(0, np.nan)[SAMPLE_INFO.index]
-    #draw_clustermap(hm_df).savefig('/home/haeun/DATA/splicing/Analysis/two-hit/twohit_somatic.tier_{0}.heatmap.png'.format(get_postfix(i)))
+    # draw_clustermap(hm_df).savefig('/home/haeun/DATA/splicing/Analysis/two-hit/twohit_somatic.tier_{0}.heatmap.png'.format(get_postfix(i)))

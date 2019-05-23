@@ -6,30 +6,35 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import *
-
+"""
 group_info = pd.read_csv('~/DATA/splicing/Analysis/HR_leafviz/BRCA_free/groups/BRCA_free.HRD_sig3_median_groups.txt',
                          sep='\t', header=None, names=['sample', 'group'],
                          index_col=0, squeeze=True)
 high_group = group_info[group_info == 'high'].index
 low_group = group_info[group_info == 'low'].index
+"""
+
 tier = pd.read_csv('~/DATA/splicing/data/KEGG/KEGG_plus_curated_genes_tier_ensembl.txt',
                    header=0, index_col=0, sep='\t')
-tmap = pd.read_csv('~/DATA/splicing/Analysis/Quant/merged/stringtie.BRCA_751.merged.tier_123.gtf.tmap_extended.tsv',
+tmap = pd.read_csv('/home/haeun/DATA/splicing/Analysis/Quant/CCLE-BRCA/merged/stringtie.CCLE_56.merged.gtf.tmap_extended.tsv',
                    sep='\t', header=0, index_col=4)
+tmap = tmap[tmap['ref_gene_id'].isin(tier[tier['Tier'] != 3].index)]
 
-fpkm = pd.read_csv('~/DATA/splicing/Analysis/Quant/ballgown-all/allgene_394.transcript.fpkm.tsv',
+fpkm = pd.read_csv('/home/haeun/DATA/splicing/Analysis/Quant/CCLE-BRCA/fpkms/CCLE-BRCA.tier12_fpkm.tsv',
                    sep='\t', header=0, index_col=0)
-fpkm = fpkm.reindex(tmap[tmap['ref_gene_id'].isin(
-    tier[tier['Tier'] == 1].index)].index)
 
-tpm = pd.read_csv('~/DATA/splicing/Analysis/transcript_usage/novel_merged.txt',
+tpm = pd.read_csv('~/DATA/splicing/Analysis/transcript_usage/CCLE-BRCA/merged.txt',
                   sep='\t', header=0, index_col=None)
 
 tpm = tpm.set_index(tpm['gene_ENST'].str.split(
     '-', 1, expand=True)[0]).drop('gene_ENST', axis=1)
 tpm = tpm.reindex(tmap[tmap['ref_gene_id'].isin(
-    tier[tier['Tier'] == 1].index)].index)
+    tier[tier['Tier'] != 3].index)].index)
+
+tpm.columns = pd.Series(tpm.columns).str.split('.', expand=True)[1].str.replace('-', '').str.replace('_', '').str.upper() + "_BREAST"
 tpm = tpm[fpkm.columns]
+
+tpm.corrwith(fpkm, axis=0)
 
 
 fpkm_prop = pd.read_csv('~/DATA/splicing/Analysis/transcript_usage/tier12_transcript_proportion.tsv',

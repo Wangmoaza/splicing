@@ -11,14 +11,14 @@ from statsmodels.stats.multitest import fdrcorrection
 
 ############ make annottaion file #############
 def make_annotation():
-    gencode = pd.read_csv('~/DATA/splicing/data/GENCODE/gencode.v29.protein_coding.transcripts.tsv',
+    gencode = pd.read_csv('~/DATA/splicing/data/GENCODE/gencode.v19.protein_coding.transcripts.tsv',
                           sep='\t', header=0, index_col=1)
 #                          names=['gene_id', 'transcript_id', 'gene_type', 'gene_name', 'transcript_type', 'transcript_name'])
 
-    tmap = pd.read_csv('~/DATA/splicing/Analysis/Quant/merged/stringtie.BRCA_751.merged.gtf.tmap',
+    tmap = pd.read_csv('~/DATA/splicing/Analysis/Quant/CCLE-OV/merged/stringtie.CCLE_45.merged.gtf.tmap',
                        sep='\t', header=0, index_col=None)
 
-    appris = pd.read_csv('~/DATA/splicing/data/APPRIS/appris_data.principal.txt',
+    appris = pd.read_csv('~/DATA/splicing/data/APPRIS/appris_data.principal.hg19.txt',
                          sep='\t', index_col=2, header=None,
                          names=['gene_name', 'gene_id', 'transcrpt_id', 'ccds_id', 'code'])
 
@@ -33,11 +33,11 @@ def make_annotation():
         lambda x: type_dict.get(x, np.nan))
     tmap['ref_transcript_code'] = tmap['ref_id2'].apply(
         lambda x: code_dict.get(x, np.nan))
-
+    # drop transcrpits from non-protein coding genes
     tmap = tmap.dropna(subset=['ref_transcript_type'], axis=0)
     tmap = tmap.drop(['TPM', 'FPKM', 'cov'], axis=1)
     tmap.to_csv(
-        '~/DATA/splicing/Analysis/Quant/merged/stringtie.BRCA_751.merged.gtf.tmap_extended.tsv', sep='\t', index=False)
+        '~/DATA/splicing/Analysis/Quant/CCLE-OV/merged/stringtie.CCLE_45.merged.gtf.tmap_extended.tsv', sep='\t', index=False)
 
 
 ################################################################################
@@ -50,21 +50,32 @@ high_group = group_info[group_info == 'high'].index
 low_group = group_info[group_info == 'low'].index
 
 
+def calculate_r(U_arr, n1, n2):
+    return 1 - (2 * U_arr) / (n1 * n2)
+
+
+def calculate_auc(U_arr, n1, n2):
+    return U_arr / (n1 * n2)
+
+
 def manwhitney_test(df, alternative='two-sided'):
     stat_list = []
     p_list = []
     for gene in df.index:
         try:
             stat, p = mannwhitneyu(
-                df.loc[gene, high_group], df.loc[gene, low_group],
+                df.loc[gene, low_group], df.loc[gene, high_group],
                 alternative=alternative)
             stat_list.append(stat)
             p_list.append(p)
         except ValueError:
             stat_list.append(np.nan)
             p_list.append(1)
-
-    return np.array(stat_list), fdrcorrection(p_list)[1]
+    U_arr = np.array(stat_list)
+    n1, n2 = high_group.shape[0], low_group.shape[0]
+    r_arr = calculate_r(U_arr, n1, n2)
+    auc_arr = calculate_auc(U_arr, n1, n2)
+    return U_arr, r_arr, auc_arr, fdrcorrection(p_list)[1]
 
 
 def ks_test(df):
@@ -83,52 +94,60 @@ def ks_test(df):
     return np.array(stat_list), fdrcorrection(p_list)[1]
 
 
+
+
 tier = pd.read_csv('~/DATA/splicing/data/KEGG/KEGG_plus_curated_genes_tier_ensembl.txt',
                    header=0, index_col=0, sep='\t')
-tmap = pd.read_csv('~/DATA/splicing/Analysis/Quant/merged/stringtie.BRCA_751.merged.gtf.tmap_extended.tsv',
+tmap = pd.read_csv('/home/haeun/DATA/splicing/Analysis/Quant/CCLE-BRCA/merged/stringtie.CCLE_56.merged.gtf.tmap_extended.tsv',
                    sep='\t', header=0, index_col=4)
 
-# change to tpm values
+tmap.head()
+# change to exp values
 # exclude tier 3 genes
-#tmap = tmap[tmap['ref_gene_id'].isin(tier[tier['Tier'] != 3].index)]
+tmap = tmap[tmap['ref_gene_id'].isin(tier[tier['Tier'] != 3].index)]
 
-
-exp = pd.read_csv('~/DATA/splicing/Analysis/Quant/ballgown-all/allgene_394.transcript.fpkm.tsv',
-                  sep='\t', header=0, index_col=0)
+exp = pd.read_csv('/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/merged.txt',
+                  sep='\t', header=0, index_col=None)
+exp = exp.set_index(exp['gene_ENST'].str.split(
+    '-', 1, expand=True)[0]).drop('gene_ENST', axis=1)
 exp = exp.reindex(tmap.index)
+exp
 merged = pd.concat([tmap['ref_gene_id'], exp], join='inner', axis=1)
 gene_exp = merged.groupby('ref_gene_id').sum()
-
 merged = merged.reset_index().set_index(['ref_gene_id', 'qry_id'])
-
+merged
 prop = pd.DataFrame(np.nan, index=merged.index, columns=merged.columns)
 for i in range(merged.shape[0]):
     prop.iloc[i, :] = merged.iloc[i, :] / gene_exp.loc[merged.index[i][0], :]
 
-prop.shape
+prop = prop.sort_index(axis=1)
+prop.to_csv('/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/allgene_transcript_proportion.tsv', sep='\t')
+#prop.loc[(tier[tier['Tier'] != 3].index, slice(None)), :].to_csv(
+#    '/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/tier12_transcript_proportion.tsv', sep='\t')
 
-prop.to_csv('allgene_transcript_proportion.tsv', sep='\t')
-prop.loc[(tier[tier['Tier'] != 3].index, slice(None)), :].to_csv('tier12_transcript_proportion.tsv', sep='\t')
+
 ################# diversity #####################
 # number of transcripts with > 1% expression within each gene
 grouped = prop[prop > 0.01].groupby('ref_gene_id')
-#grouped.count().to_csv('~/DATA/splicing/Analysis/transcript_usage/diversity.tsv', sep='\t')
+grouped.count().to_csv('~/DATA/splicing/Analysis/transcript_usage/Cell-line/diversity.tsv', sep='\t')
 diversity = grouped.count()
 
-stat_arr, adjp_arr = manwhitney_test(diversity, alternative='greater')
-pd.DataFrame({'stat': stat_arr, 'adjp': adjp_arr}, index=diversity.index).sort_values('adjp').to_csv('/home/haeun/DATA/splicing/Analysis/transcript_usage/diversity_allgene_test_result.tsv', sep='\t')
+stat_arr, r_arr, auc_arr, adjp_arr = manwhitney_test(
+    diversity, alternative='less')
+pd.DataFrame({'stat': stat_arr, 'r': r_arr, 'auc': auc_arr, 'adjp': adjp_arr}, index=diversity.index).sort_values('adjp').to_csv(
+    '/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/diversity_tier12.mannwhitney_high_greater_result.tsv', sep='\t')
 
 for i in range(diversity.shape[0]):
-    if adjp_arr[i] >= 0.05:
+    if adjp_arr[i] >= 0.1 or diversity.index[i] not in tier[tier['Tier'] != 3].index:
         continue
     fig, ax = plt.subplots(figsize=(6, 6))
-    ax.set_title('{0} (adjp = {1})'.format(diversity.index[i], adjp_arr[i]))
+    ax.set_title('{0} (adjp = {1:.5})'.format(diversity.index[i], adjp_arr[i]))
     sns.boxplot(x=group_info.sort_values(), y=diversity.iloc[i, :],
                 ax=ax, palette=sns.husl_palette(2))
-    sns.swarmplot(x=group_info.sort_values(), y=diversity.iloc[i, :],
-                  ax=ax, color='black', alpha=0.7)
+    sns.plot(x=group_info.sort_values(), y=diversity.iloc[i, :],
+                  ax=ax, color='black', alpha=0.5)
     fig.savefig(
-        '/home/haeun/DATA/splicing/Analysis/transcript_usage/{0}_diversity2.png'.format(diversity.index[i]))
+        '/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/figures/{0}_diversity2.png'.format(diversity.index[i]))
     plt.close()
 
 
@@ -139,27 +158,29 @@ nonfunc = tmap[(tmap['ref_transcript_type'] != 'protein_coding') | (
     tmap['class_code'].isin(['i', 'y', 'p', 's']))].index
 
 # not APPRIS (annotated transcirpt) or non-annotated transcript
-nonfunc = tmap[(tmap['ref_transcript_code'].isna()) | (tmap['class_code'] != "=")].index
-nonfunc.shape
+nonfunc = tmap[(tmap['ref_transcript_code'].isna())
+               | (tmap['class_code'] != "=")].index
 
-tmap[(tmap['ref_transcript_code'].isna()) | (tmap['class_code'] != "=")]
 grouped = prop.loc[(slice(None), nonfunc), :].groupby('ref_gene_id')
 result = grouped.sum()
 
-stat_arr, adjp_arr = manwhitney_test(result, alternative='greater')
-pd.DataFrame({'stat': stat_arr, 'adjp': adjp_arr}, index=result.index).sort_values('adjp').to_csv('/home/haeun/DATA/splicing/Analysis/transcript_usage/notappris_allgene.mannwhitney_high_greater_result.tsv', sep='\t')
+result.to_csv('/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/notappris_tier12.proportion.tsv', sep='\t')
+stat_arr, r_arr, auc_arr, adjp_arr = manwhitney_test(
+    result, alternative='less')
+pd.DataFrame({'stat': stat_arr, 'r': r_arr, 'auc': auc_arr, 'adjp': adjp_arr}, index=result.index).sort_values('adjp').to_csv(
+    '/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/notappris_tier12.mannwhitney_high_greater_result.tsv', sep='\t')
 
 for i in range(result.shape[0]):
-    if adjp_arr[i] >= 0.05:
+    if adjp_arr[i] >= 0.05 or diversity.index[i] not in tier[tier['Tier'] != 3].index:
         continue
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.set_title('{0} (adjp = {1:.5})'.format(result.index[i], adjp_arr[i]))
     sns.boxplot(x=group_info.sort_values(), y=result.iloc[i, :],
                 ax=ax, palette=sns.husl_palette(2))
-    sns.swarmplot(x=group_info.sort_values(), y=result.iloc[i, :],
-                  ax=ax, color='black', alpha=0.7)
+    sns.strippplot(x=group_info.sort_values(), y=result.iloc[i, :],
+                  ax=ax, color='black', alpha=0.2)
     fig.savefig(
-        '/home/haeun/DATA/splicing/Analysis/transcript_usage/{0}_notcoding.png'.format(result.index[i]))
+        '/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/figures/{0}_notappris2.png'.format(result.index[i]))
     plt.close()
 
 pass_arr.shape
@@ -176,7 +197,7 @@ fig, ax = plt.subplots(figsize=(5, 40))
 np.log2(gene_exp + 0.00001).T.plot.box(vert=False, ax=ax)
 plt.tight_layout()
 fig.savefig(
-    '/home/haeun/DATA/splicing/Analysis/transcript_usage/log2_gene_expression.pdf')
+    '/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/log2_gene_expression.pdf')
 
 # gene expression vs. p-value
 new_df = pd.DataFrame({'p': adjp_arr, 'gene_exp': np.log2(
