@@ -11,14 +11,14 @@ from statsmodels.stats.multitest import fdrcorrection
 
 ############ make annottaion file #############
 def make_annotation():
-    gencode = pd.read_csv('~/DATA/splicing/data/GENCODE/gencode.v19.protein_coding.transcripts.tsv',
+    gencode = pd.read_csv('~/DATA/splicing/data/GENCODE/gencode.v29.protein_coding.transcripts.tsv',
                           sep='\t', header=0, index_col=1)
 #                          names=['gene_id', 'transcript_id', 'gene_type', 'gene_name', 'transcript_type', 'transcript_name'])
 
-    tmap = pd.read_csv('~/DATA/splicing/Analysis/Quant/CCLE-OV/merged/stringtie.CCLE_45.merged.gtf.tmap',
+    tmap = pd.read_csv('~/DATA/splicing/Analysis/Quant/PDC/merged/stringtie.PDX_24.merged.gtf.tmap',
                        sep='\t', header=0, index_col=None)
 
-    appris = pd.read_csv('~/DATA/splicing/data/APPRIS/appris_data.principal.hg19.txt',
+    appris = pd.read_csv('~/DATA/splicing/data/APPRIS/appris_data.principal.hg38.txt',
                          sep='\t', index_col=2, header=None,
                          names=['gene_name', 'gene_id', 'transcrpt_id', 'ccds_id', 'code'])
 
@@ -37,7 +37,7 @@ def make_annotation():
     tmap = tmap.dropna(subset=['ref_transcript_type'], axis=0)
     tmap = tmap.drop(['TPM', 'FPKM', 'cov'], axis=1)
     tmap.to_csv(
-        '~/DATA/splicing/Analysis/Quant/CCLE-OV/merged/stringtie.CCLE_45.merged.gtf.tmap_extended.tsv', sep='\t', index=False)
+        '~/DATA/splicing/Analysis/Quant/PDC/merged/stringtie.PDX_24.merged.tmap_extended.tsv', sep='\t', index=False)
 
 
 ################################################################################
@@ -75,7 +75,7 @@ def manwhitney_test(df, alternative='two-sided'):
     n1, n2 = high_group.shape[0], low_group.shape[0]
     r_arr = calculate_r(U_arr, n1, n2)
     auc_arr = calculate_auc(U_arr, n1, n2)
-    return U_arr, r_arr, auc_arr, fdrcorrection(p_list)[1]
+    return U_arr, r_arr, auc_arr, p_list, fdrcorrection(p_list)[1]
 
 
 def ks_test(df):
@@ -94,11 +94,9 @@ def ks_test(df):
     return np.array(stat_list), fdrcorrection(p_list)[1]
 
 
-
-
 tier = pd.read_csv('~/DATA/splicing/data/KEGG/KEGG_plus_curated_genes_tier_ensembl.txt',
                    header=0, index_col=0, sep='\t')
-tmap = pd.read_csv('/home/haeun/DATA/splicing/Analysis/Quant/CCLE-BRCA/merged/stringtie.CCLE_56.merged.gtf.tmap_extended.tsv',
+tmap = pd.read_csv('/home/haeun/DATA/splicing/Analysis/Quant/TCGA-BRCA/merged/stringtie.BRCA_751.merged.gtf.tmap_extended.tsv',
                    sep='\t', header=0, index_col=4)
 
 tmap.head()
@@ -122,32 +120,43 @@ for i in range(merged.shape[0]):
 
 prop = prop.sort_index(axis=1)
 prop.to_csv('/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/allgene_transcript_proportion.tsv', sep='\t')
-#prop.loc[(tier[tier['Tier'] != 3].index, slice(None)), :].to_csv(
+# prop.loc[(tier[tier['Tier'] != 3].index, slice(None)), :].to_csv(
 #    '/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/tier12_transcript_proportion.tsv', sep='\t')
 
+prop = pd.read_csv('/home/haeun/DATA/splicing/Analysis/transcript_usage/TCGA-BRCA/tier12_transcript_proportion.tsv',
+                   sep='\t', header=0, index_col=[0, 1])
 
+prop.head()
 ################# diversity #####################
 # number of transcripts with > 1% expression within each gene
 grouped = prop[prop > 0.01].groupby('ref_gene_id')
-grouped.count().to_csv('~/DATA/splicing/Analysis/transcript_usage/Cell-line/diversity.tsv', sep='\t')
+grouped.count().to_csv(
+    '~/DATA/splicing/Analysis/transcript_usage/TCGA-BRCA/diversity.tsv', sep='\t')
 diversity = grouped.count()
 
-stat_arr, r_arr, auc_arr, adjp_arr = manwhitney_test(
+stat_arr, r_arr, auc_arr, p_arr, adjp_arr = manwhitney_test(
     diversity, alternative='less')
-pd.DataFrame({'stat': stat_arr, 'r': r_arr, 'auc': auc_arr, 'adjp': adjp_arr}, index=diversity.index).sort_values('adjp').to_csv(
-    '/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/diversity_tier12.mannwhitney_high_greater_result.tsv', sep='\t')
+pd.DataFrame({'stat': stat_arr, 'r': r_arr, 'auc': auc_arr, 'p': p_arr, 'adjp': adjp_arr}, index=diversity.index).sort_values('adjp').to_csv(
+    '/home/haeun/DATA/splicing/Analysis/transcript_usage/TCGA-BRCA/diversity_tier12.mannwhitney_high_greater_result.tsv', sep='\t')
 
+col = [sns.husl_palette(10, l =.6)[1],sns.husl_palette(10, l =.6)[7]]
+sns.set(font_scale=3, style='white')
 for i in range(diversity.shape[0]):
-    if adjp_arr[i] >= 0.1 or diversity.index[i] not in tier[tier['Tier'] != 3].index:
+    #if adjp_arr[i] >= 0.1 or diversity.index[i] not in tier[tier['Tier'] != 3].index:
+    #    continue
+    if diversity.index[i] not in ['BRIP1', 'UBE2V2', 'ATM', 'RAD51']:
         continue
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.set_title('{0} (adjp = {1:.5})'.format(diversity.index[i], adjp_arr[i]))
+    fig, ax = plt.subplots(figsize=(10, 9))
+    #ax.set_title('{0} (adjp = {1:.5})'.format(diversity.index[i], adjp_arr[i]))
+    ax.set_title(diversity.index[i])
+
     sns.boxplot(x=group_info.sort_values(), y=diversity.iloc[i, :],
-                ax=ax, palette=sns.husl_palette(2))
-    sns.plot(x=group_info.sort_values(), y=diversity.iloc[i, :],
-                  ax=ax, color='black', alpha=0.5)
+                ax=ax, palette=col, showfliers=False, width=.5, linewidth=2, notch=True)
+    sns.stripplot(x=group_info.sort_values(), y=diversity.iloc[i, :],
+                  ax=ax, color='0.2', alpha=0.6)
+    ax.set_ylabel('diversity')
     fig.savefig(
-        '/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/figures/{0}_diversity2.png'.format(diversity.index[i]))
+        '/home/haeun/DATA/splicing/Analysis/transcript_usage/TCGA-BRCA/figures/{0}_diversity2.png'.format(diversity.index[i]))
     plt.close()
 
 
@@ -164,7 +173,8 @@ nonfunc = tmap[(tmap['ref_transcript_code'].isna())
 grouped = prop.loc[(slice(None), nonfunc), :].groupby('ref_gene_id')
 result = grouped.sum()
 
-result.to_csv('/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/notappris_tier12.proportion.tsv', sep='\t')
+result.to_csv(
+    '/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/notappris_tier12.proportion.tsv', sep='\t')
 stat_arr, r_arr, auc_arr, adjp_arr = manwhitney_test(
     result, alternative='less')
 pd.DataFrame({'stat': stat_arr, 'r': r_arr, 'auc': auc_arr, 'adjp': adjp_arr}, index=result.index).sort_values('adjp').to_csv(
@@ -178,7 +188,7 @@ for i in range(result.shape[0]):
     sns.boxplot(x=group_info.sort_values(), y=result.iloc[i, :],
                 ax=ax, palette=sns.husl_palette(2))
     sns.strippplot(x=group_info.sort_values(), y=result.iloc[i, :],
-                  ax=ax, color='black', alpha=0.2)
+                   ax=ax, color='black', alpha=0.2)
     fig.savefig(
         '/home/haeun/DATA/splicing/Analysis/transcript_usage/Cell-line/figures/{0}_notappris2.png'.format(result.index[i]))
     plt.close()

@@ -1,5 +1,5 @@
 # Ha-Eun Hwangbo
-# 2019/05/09
+# 2019/06/10
 
 import pandas as pd
 import numpy as np
@@ -8,28 +8,29 @@ import seaborn as sns
 from scipy.stats import *
 from statsmodels.stats.multitest import fdrcorrection
 
-TUMOR = "BRCA"
-PATH = "/home/haeun/DATA/splicing/Analysis/transcript_usage/CCLE-{0}/".format(
-    TUMOR)
+TUMOR = "PDC"
+PATH = "/home/haeun/DATA/splicing/Analysis/transcript_usage/{0}/".format(TUMOR)
 
 tier = pd.read_csv('~/DATA/splicing/data/KEGG/KEGG_plus_curated_genes_tier_ensembl.txt',
                    header=0, index_col=0, sep='\t')
-tmap = pd.read_csv('/home/haeun/DATA/splicing/Analysis/Quant/CCLE-{0}/merged/stringtie.CCLE_56.merged.gtf.tmap_extended.tsv'.format(TUMOR),
+tmap = pd.read_csv('/home/haeun/DATA/splicing/Analysis/Quant/{0}/merged/stringtie.PDX_24.merged.tmap_extended.tsv'.format(TUMOR),
                    sep='\t', header=0, index_col=4)
 tmap = tmap[tmap['ref_gene_id'].isin(tier[tier['Tier'] != 3].index)]
 
 prop = pd.read_csv(PATH + 'tier12_transcript_proportion.tsv',
                    sep='\t', header=0, index_col=[0, 1])
 
-# use only BRCA-free samples
-brca_status = pd.read_csv(PATH + 'CCLE-{0}.group_info.tsv'.format(TUMOR),
-                          sep='\t', header=0, index_col=0)
-
-brca_free = brca_status[brca_status['BRCA_status'] == 'BRCA_free'].index
-
-d2 = pd.read_csv('/home/haeun/DATA/splicing/data/Cell_lines/DepMap/D2_{0}_combined_gene_dep_scores_minus.tsv'.format(TUMOR),
+d2 = pd.read_csv('/home/haeun/DATA/splicing/data/PDX/dependency/PDX_24.dependency.tsv',
                  sep='\t', header=0, index_col=0)
-
+d2 = d2.dropna()
+# d2_z.T.sort_values('A1BG').T.reindex(tier.index).dropna().min()
+plt.subplots(figsize=(15, 10))
+d2_z.T.sort_values('A1BG').T.dropna().boxplot(vert=False)
+plt.savefig(PATH + 'PDC_allgene_dependency_z.png')
+d2_z = pd.DataFrame(zscore(d2), index=d2.index, columns=d2.columns)
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.distplot(prop.loc[('BRIP1', 'ENST00000577598.5'), :], ax=ax)
+fig.savefig(PATH + 'BRIP1-202_dist.png')
 
 def corr_test(a, b, test_gene):
     lists = []
@@ -108,11 +109,12 @@ def transcript_type(t_type):
     return nonfunc
 
 
-shared_samples = np.intersect1d(
-    np.intersect1d(d2.columns, prop.columns), brca_free)
+# shared_samples = np.intersect1d(
+#     np.intersect1d(d2.columns, prop.columns), brca_free)
+shared_samples = np.intersect1d(d2.columns, prop.columns)
 d2 = d2[shared_samples]
 prop = prop[shared_samples]
-brca_status = brca_status.loc[shared_samples, :]
+#brca_status = brca_status.loc[shared_samples, :]
 
 target_list = ['BRIP1', 'ATM', 'RAD51']
 tmap.head()
@@ -129,10 +131,10 @@ for i in target_list:
     # for i in ['ATM']:
     # for gene in d2.index:
     #df = corr_test(result.loc[i, :], d2, tier[tier['Tier'] != 3].index)
-    df = corr_test(result.loc[i, :], d2, d2.index)
+    df = corr_test(result.loc[i, :], d2_z, d2_z.index)
     df = df.dropna().sort_values('r', ascending=False)
     df.to_csv(
-        PATH + 'dependency/{0}_{1}_d2_corr.tsv'.format(i, t_type), sep='\t', index=False)
+        PATH + 'dependency/{0}_{1}_d2-z_corr.tsv'.format(i, t_type), sep='\t', index=False)
     print i
 
 # median difference based
@@ -153,9 +155,9 @@ result = prop.dropna(axis=0)[prop.dropna(axis=0).mean(axis=1) > 0.05]
 
 for gene in target_list:
     for transcript in result.loc[gene, :].index:
-        df = corr_test(result.loc[(gene, transcript), :], d2, d2.index)
+        df = corr_test(result.loc[(gene, transcript), :], d2_z, d2_z.index)
         df = df.dropna().sort_values('r', ascending=False)
-        df.to_csv(PATH + 'dependency/{0}_{1}_d2_corr.tsv'.format(gene, transcript),
+        df.to_csv(PATH + 'dependency/{0}_{1}_d2-z_corr.tsv'.format(gene, transcript),
                   sep='\t', index=False)
 for gene in target_list:
     for transcript in result.loc[gene, :].index:
@@ -173,22 +175,29 @@ for gene in target_list:
 
 # target_repair = tier[tier['Pathway'].str.contains('Nucleotide excision')
 target_repair = tier[tier['Tier'] != 3]
-target_gene = ('BRIP1', "ENST00000577598.1")
-df = corr_test(result.loc[target_gene, :], d2, target_repair.index)
+#target_gene = "BRIP1"
+target_gene = ('BRIP1', "ENST00000577598.5")
+df = corr_test(result.loc[target_gene, :], d2_z, target_repair.index)
 df = df.dropna().sort_values('r', ascending=False)
 df = df.set_index('gene').dropna().sort_values('r')
-df[df['r'] > 0]
 d2_gene = 'ERCC4'
-for d2_gene in df[(df['p'] < 0.05) & (df['r'] > 0)].index:
-    fig, ax = plt.subplots(figsize=(5, 5))
-    sns.regplot(result.loc[target_gene, :], d2.loc[d2_gene, :], ax=ax,
-                label='r={0:.3f} p={1:.3f}'.format(df.loc[d2_gene, 'r'], df.loc[d2_gene, 'p']))
-    ax.set_xlabel('{0} {1} TU'.format(target_gene, t_type))
-    ax.set_ylabel('{0} -D2 score'.format(d2_gene))
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig(
-        PATH + 'dependency/{0}_{1}_{2}_relplot.png'.format(target_gene[0], target_gene[1], d2_gene))
+#for d2_gene in df[(df['p'] < 0.05) & (df['r'] > 0)].index:
+for d2_gene in target_repair.index:
+    try:
+        fig, ax = plt.subplots(figsize=(5, 5))
+        sns.regplot(result.loc[target_gene, :], d2_z.loc[d2_gene, :], ax=ax,
+                    label='r={0:.3f} p={1:.3f}'.format(df.loc[d2_gene, 'r'], df.loc[d2_gene, 'p']))
+        ax.set_xlabel('{0} {1} TU'.format(target_gene, t_type))
+        ax.set_ylabel('{0} pred zscore'.format(d2_gene))
+        ax.legend()
+        fig.tight_layout()
+        # fig.savefig(
+        #     PATH + 'dependency/{0}_{1}_{2}_z_relplot.png'.format(target_gene, t_type, d2_gene))
+        fig.savefig(
+           PATH + 'dependency/{0}_{1}_{2}_z_relplot.png'.format(target_gene[0], target_gene[1], d2_gene))
+        plt.close()
+    except KeyError:
+        print d2_gene
 
 # sig3 vs. dependency
 hrd_d2 = np.intersect1d(d2.columns, brca_free)

@@ -8,11 +8,11 @@ import seaborn as sns
 from scipy.stats import *
 from statsmodels.stats.multitest import fdrcorrection
 
-PATH = "/home/haeun/DATA/splicing/Analysis/transcript_usage/CCLE-BRCA/"
+PATH = "/home/haeun/DATA/splicing/Analysis/transcript_usage/PDC/"
 
 tier = pd.read_csv('~/DATA/splicing/data/KEGG/KEGG_plus_curated_genes_tier_ensembl.txt',
                    header=0, index_col=0, sep='\t')
-tmap = pd.read_csv('/home/haeun/DATA/splicing/Analysis/Quant/CCLE-BRCA/merged/stringtie.CCLE_56.merged.gtf.tmap_extended.tsv',
+tmap = pd.read_csv('/home/haeun/DATA/splicing/Analysis/Quant/PDC/merged/stringtie.PDX_24.merged.tmap_extended.tsv',
                    sep='\t', header=0, index_col=4)
 
 
@@ -27,9 +27,9 @@ def calc_prop():
         '-', 1, expand=True)[0]).drop('gene_ENST', axis=1)
 
     # change name to CCLE convention
-    ccle_name = pd.Series(exp.columns).str.split(".", expand=True)[1].str.replace(
-        '-', '').str.replace('_', '').str.upper() + '_BREAST'
-    exp.columns = ccle_name
+    # ccle_name = pd.Series(exp.columns).str.split(".", expand=True)[1].str.replace(
+    #     '-', '').str.replace('_', '').str.upper() + '_BREAST'
+    # exp.columns = ccle_name
 
     # keep transcripts in tmap
     exp = exp.reindex(tmap.index)
@@ -44,11 +44,11 @@ def calc_prop():
     prop = prop.sort_index(axis=1)
     prop.to_csv(PATH + 'allgene_transcript_proportion.tsv', sep='\t')
 
-#calc_prop()
-#prop = pd.read_csv(PATH + 'allgene_transcript_proportion.tsv', sep='\t', header=0, index_col=[0, 1])
-# exclude tier 3 genes
-#tmap = tmap[tmap['ref_gene_id'].isin(tier[tier['Tier'] != 3].index)]
-#prop.loc[(slice(None), tmap.index), :].to_csv(PATH + 'tier12_transcript_proportion.tsv', sep='\t')
+calc_prop()
+prop = pd.read_csv(PATH + 'allgene_transcript_proportion.tsv', sep='\t', header=0, index_col=[0, 1])
+#exclude tier 3 genes
+tmap = tmap[tmap['ref_gene_id'].isin(tier[tier['Tier'] != 3].index)]
+prop.loc[(slice(None), tmap.index), :].to_csv(PATH + 'tier12_transcript_proportion.tsv', sep='\t')
 ########## make group_info file
 #group_info = pd.read_csv(PATH + 'CCLE_sig3.txt', sep='\t', header=None, names=['Cell', 'sig3_abs', 'sig3_rel'], index_col=0)
 #group_info.index = group_info.index + '_OVARY'
