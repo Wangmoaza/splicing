@@ -15,7 +15,7 @@ def make_annotation():
                           sep='\t', header=0, index_col=1)
 #                          names=['gene_id', 'transcript_id', 'gene_type', 'gene_name', 'transcript_type', 'transcript_name'])
 
-    tmap = pd.read_csv('~/DATA/splicing/Analysis/Quant/PDC/merged/stringtie.PDX_24.merged.gtf.tmap',
+    tmap = pd.read_csv('~/DATA/splicing/Analysis/Quant/TCGA-BRCA/merged/stringtie.TCGA-BRCA.merged_strict.gtf.tmap',
                        sep='\t', header=0, index_col=None)
 
     appris = pd.read_csv('~/DATA/splicing/data/APPRIS/appris_data.principal.hg38.txt',
@@ -37,7 +37,7 @@ def make_annotation():
     tmap = tmap.dropna(subset=['ref_transcript_type'], axis=0)
     tmap = tmap.drop(['TPM', 'FPKM', 'cov'], axis=1)
     tmap.to_csv(
-        '~/DATA/splicing/Analysis/Quant/PDC/merged/stringtie.PDX_24.merged.tmap_extended.tsv', sep='\t', index=False)
+        '~/DATA/splicing/Analysis/Quant/TCGA-BRCA/merged/stringtie.TCGA-BRCA.merged_strict.gtf.tmap_extended.tsv', sep='\t', index=False)
 
 
 ################################################################################
