@@ -12,6 +12,9 @@ HRD low = Non-HRD
 
 ### Overview
 
+haeun@143.248.31.113  
+password: hello0512  
+
 splicing/  
 ├── **Analysis** : Analyzed by Haeun (StringTie Quantification, DEXSeq results, etc.)  
 ├── **data** : downloaded files (GENCODE, KEGG, DepMap, etc.)   
@@ -44,7 +47,7 @@ Merged KEGG Replication and repair pathways and curated set from [here](https://
     - omics@143.248.31.178:/home/omics/DATA1/06_haeun/splicing/data/KEGG/KEGG_plus_curated_genes_tier_ensembl.txt (duplicate)
 
 
-### StringTie Quantification
+### StringTie (Transcript-level Quantification)
 
 - Source Code
     - omics@143.248.31.178:/home/omics/DATA1/06_haeun/splicing/src/quant/
@@ -70,6 +73,25 @@ Merged KEGG Replication and repair pathways and curated set from [here](https://
 ├── **gffcompare** : gffcompare results  
 └── **merged** : GTF and tmap_extended files used for ballgown/ballgown-strict and downstream analyses
 
+
+### EdgeR (Gene-level Quantification & DEG)
+
+- Source Code
+    - haeun@143.248.31.113:/home/haeun/DATA/splicing/src/DEG_analysis.R
+- Result
+    - haeun@143.248.31.113:/home/haeun/DATA/splicing/Analysis/DEG/
+
+
+### Ballgown (DET)
+
+- Source Code
+    - haeun@143.248.31.113:/home/haeun/DATA/splicing/src/ballgown.R
+    - haeun@143.248.31.113:/home/haeun/DATA/splicing/src/annotate_DET_result.py
+- Result
+    - haeun@143.248.31.113:/home/haeun/DATA/splicing/Analysis/DET/allgene_DET_results.tsv
+    - haeun@143.248.31.113:/home/haeun/DATA/splicing/Analysis/DET/allgene_DET_results_tier12.tsv
+
+
 ### DEXSeq
 
 Differential exon usage between HRD and Non-HRD in BRCA-active  group (TCGA-BRCA)  
@@ -84,13 +106,56 @@ Only tested tier 123 genes (tier123 gene만으로만 테스트했기 때문에 �
 
 ### Leafcutter
 
-- Leafcutter result
-- /home/omics/DATA1/06_haeun/splicing/Analysis/HR_leafviz/
-- source codes
-- Leafcutter result for TCGA-BRCA
-    - HRD vs. Non-HRD in BRCA-active group
-    - HRD vs. Non-HRD in BRCA-inactive group
-    - BRCA-active vs. BRCA-inactive in HRD group
-    - BRCA-active vs. BRCA-inactive in Non-HRD group
-    - BRCA-active HRD vs. BRCA-inactive Non-HRD
-    - BRCA-active Non-HRD vs. BRCA-inactive HRD
+- Source Code
+    - haeun@143.248.31.113:/home/omics/DATA1/06_haeun/splicing/Analysis/HR_leafviz/
+- Result
+    - haeun@143.248.31.113:/home/omics/DATA1/06_haeun/splicing/Analysis/HR_leafviz/
+
+
+### Cell Lines
+
+haeun@143.248.31.113:/home/haeun/DATA/splicing/data/Cell_lines  
+├── **CCLE/**  
+│   ├── CCLE_sample_info_file_2012-10-18.txt  
+│   ├── Cell_lines_annotations_20181226.txt  
+│   ├── CNV/  
+│   ├── drug/  
+│   ├── README  
+│   ├── RNAseq/  
+│   ├── RPPA/  
+│   └── variant/ : vcfs and mutalisk results  
+├── Cell_lines_CCLE_COSMIC_merged_info.txt  
+├── **COSMIC/**  
+│   ├── CellLinesCodingMuts.vcf  
+│   ├── CellLinesNonCodingVariants.vcf  
+│   ├── CosmicCLP_MutantExport.tsv  
+│   ├── CosmicSample.tsv  
+│   ├── genotypes  
+│   ├── QC.xlsx  
+│   └── README  
+├── **DepMap/**  
+│   ├── D2_BRCA_combined_gene_dep_scores_minus.tsv  
+│   ├── D2_BRCA_combined_gene_dep_scores.tsv  
+│   ├── D2_BRCA_sample_info.tsv  
+│   ├── D2_combined_gene_dep_scores.csv  
+│   ├── D2_combined_gene_dep_score_SDs.csv  
+│   ├── D2_combined_gene_dep_scores.tsv  
+│   ├── D2_OV_combined_gene_dep_scores.tsv  
+│   ├── D2_OV_sample_info.tsv  
+│   ├── D2_README.txt  
+│   ├── D2_sample_info.csv  
+│   ├── DepMap_18q3_README.txt  
+│   ├── DepMap_18Q3_sample_info.csv  
+│   ├── DepMap_18QC_gene_depenency.csv  
+│   ├── DepMap-2018q3-celllines.csv  
+│   ├── public_18Q3_sample_info.cnv  
+│   └── README  
+└── **GDSC/**  
+    ├── Cell_Lines_Details.xlsx  
+    ├── GDSC-CCLE-CTRP_conversion.xlsx  
+    ├── GDSC_Fitted_Data_Description.pdf  
+    ├── GDSC_Raw_Data_Description.pdf  
+    ├── PARP-inhibitor  
+    ├── v17.3_fitted_dose_response.tsv  
+    ├── v17.3_fitted_dose_response.xlsx  
+    └── v17.3_public_raw_data.tsv  

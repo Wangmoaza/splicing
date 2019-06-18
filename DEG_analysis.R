@@ -19,6 +19,40 @@ setwd('/home/haeun/DATA/splicing/')
 #expr <- expr %>% drop_na()
 
 
+################################
+# Only save TMM normalized CPM #
+################################
+
+# read count file
+expr <- read.delim('Analysis/DEG/PDC/PDX_htseq_count.tsv', 
+                   row.names = 1, header=TRUE, check.names = FALSE)
+expr <- expr %>% drop_na()
+
+# get protein coding genes
+genes<- read.delim('data/GENCODE/gencode.v29.protein_coding.id_name_mapping.txt', sep='\t', header=F, row.names = 1, check.names = F)
+
+# filter out non-expressed genes (> 10 reads in >=10 samples)
+filter <- apply(expr, 1, function(x) length(x[x>10])>=10)
+filtered <- expr[filter,]
+genes <- subset(genes,rownames(genes) %in% rownames(filtered))
+
+# merge two dataframes
+filtered$gene <- genes$V2[match(rownames(filtered),rownames(genes))]
+
+y <- DGEList(counts=subset(filtered,select=-gene), genes = filtered$gene)
+y <- calcNormFactors(y)
+
+# filter out lowly expressed genes
+keep <- rowSums(cpm(y) > 1) >= 10
+y <- y[keep, , keep.lib.sizes=F]
+# TMM Normalization
+y <- calcNormFactors(y)
+
+write.table(cpm(y, normalized.lib.sizes = T, log = T), "Analysis/DEG/PDC/PDX.log_cpm.txt", sep="\t", quote=F)
+write.table(cpm(y, normalized.lib.sizes = T, log = F), "Analysis/DEG/PDC/PDX-OV.cpm.txt", sep="\t", quote=F)
+
+#########################################################################################################3
+
 sample_info <- read.delim('Analysis/DEG/sample_list/all_438_samples.txt', 
                           header = F, check.names = F)
 clinical_info <- read.delim('Analysis/DEG/all_438.HRD_sig3_median_groups.clinical_info.txt', 
